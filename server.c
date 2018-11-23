@@ -1,133 +1,171 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-#define PORT 8000
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netdb.h>
+#include<signal.h>
+#include<fcntl.h>
 
-int main(int argc, char const *argv[])
-{
+#define CONNMAX 1000
+#define BYTES 1024
 
-    int server_fd, new_socket, valread;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
-    char buffer[1024] = {0};
-    char *hello = "Hello from server\n";
+char *ROOT;
+int listenfd, clients[CONNMAX];
+void error(char *);
+void startServer(char *);
+void respond(int);
 
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
-    }
+int main(int argc, char* argv[]){
+	struct sockaddr_in clientaddr;
+	socklen_t addrlen;
+	char c;    
+	
+	//Default Values PATH = ~/ and PORT=10000
+	char PORT[6];
+	ROOT = getenv("PWD");
+	strcpy(PORT,"10000");
 
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                   &opt, sizeof(opt)))
-    {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
+	int slot=0;
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+	//Parsing the command line arguments
+	while ((c = getopt (argc, argv, "p:r:")) != -1)
+		switch (c)
+		{
+			case 'r':
+				ROOT = malloc(strlen(optarg));
+				strcpy(ROOT,optarg);
+				break;
+			case 'p':
+				strcpy(PORT,optarg);
+				break;
+			case '?':
+				fprintf(stderr,"Wrong arguments given!!!\n");
+				exit(1);
+			default:
+				exit(1);
+		}
+	
+	printf("Server started at port no. %s%s%s with root directory as %s%s%s\n","\033[92m",PORT,"\033[0m","\033[92m",ROOT,"\033[0m");
+	// Setting all elements to -1: signifies there is no client connected
+	int i;
+	for (i=0; i<CONNMAX; i++)
+		clients[i]=-1;
+	startServer(PORT);
 
-    // Forcefully attaching socket to the port 8080
-    if (bind(server_fd, (struct sockaddr *)&address,
-             sizeof(address)) < 0)
-    {
-        perror("Bind failed!\n");
-        exit(EXIT_FAILURE);
-    }
+	// ACCEPT connections
+	while (1)
+	{
+		addrlen = sizeof(clientaddr);
+		clients[slot] = accept (listenfd, (struct sockaddr *) &clientaddr, &addrlen);
 
-    if (listen(server_fd, 3) < 0)
-    {
-        perror("Listen error!\n");
-        exit(EXIT_FAILURE);
-    }
+		if (clients[slot]<0)
+			error ("accept() error");
+		else
+		{
+			if ( fork()==0 )
+			{
+				respond(slot);
+				exit(0);
+			}
+		}
 
-    const char *header =
-        "HTTP/1.1 200 OK\n"
-        "Content-Type: text/html\n"
-        "Content-Length: 4096\n"
-        "Accept-Ranges: bytes\n"
-        "Connection: close\n"
-        "\n";
+		while (clients[slot]!=-1) slot = (slot+1)%CONNMAX;
+	}
 
-    // Leer Archivo
-    // declarar un puntero al archivo
-    FILE *infile;
-    char *data;
-    long numbytes;
-
-    // abrir un archivo existente para leerlo
-    infile = fopen("index.html", "r");
-
-    // finalizar si no existe
-    if (infile == NULL)
-        return 1;
-
-    // obtener numero de bytes
-    fseek(infile, 0L, SEEK_END);
-    numbytes = ftell(infile);
-
-    /* reset the file position indicator to 
-    the beginning of the file */
-    fseek(infile, 0L, SEEK_SET);
-
-    /* grab sufficient memory for the 
-    buffer to hold the text */
-    data = (char *)calloc(numbytes, sizeof(char));
-
-    /* memory error */
-    if (data == NULL)
-        return 1;
-
-    /* copiar todo el texto en el buffer */
-    fread(data, sizeof(char), numbytes, infile);
-    fclose(infile);
-
-    /* confirm we have read the file by
-    outputing it to the console */
-    printf("The file called test.dat contains this text\n\n%s", data);
-
-
-    // unir header con data
-    char * reply = (char *) malloc(1 + strlen(header)+ strlen(data));
-    strcpy(reply, header);
-    strcat(reply, data);
-    printf("\n\n\n%s", reply);
-
-    //for (;;)
-    //{
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                 (socklen_t *)&addrlen)) < 0)
-        {
-            perror("Accept!\n");
-            exit(EXIT_FAILURE);
-        }
-
-        valread = read(new_socket, buffer, 1024);
-        printf("%s\n", buffer);
-
-        send(new_socket, reply, strlen(reply), 0);
-
-        /* free the memory we used for the buffer */
-        //free(data);
-   // }
-
-    //"GET /%s HTTP/1.1\r\nHost: %s\r\nContent-Type: text/plain\r\n\r\n"
-    //send(new_socket, header, strlen(header), 0);
-    //char *header = "GET /index.html HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: text/html\r\n\r\n";
-    //send(new_socket, header, strlen(header), 0);
-    //send(new_socket, hello, strlen(hello), 0);
-
-    //send(new_socket, reply, strlen(reply), 0);
-    // send(new_socket, hello, strlen(hello), 0);
-    //printf("Hello message sent\n");
-
-    return 0;
+	return 0;
 }
+
+//start server
+void startServer(char *port)
+{
+	struct addrinfo hints, *res, *p;
+
+	// getaddrinfo for host
+	memset (&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	if (getaddrinfo( NULL, port, &hints, &res) != 0)
+	{
+		perror ("getaddrinfo() error");
+		exit(1);
+	}
+	// socket and bind
+	for (p = res; p!=NULL; p=p->ai_next)
+	{
+		listenfd = socket (p->ai_family, p->ai_socktype, 0);
+		if (listenfd == -1) continue;
+		if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0) break;
+	}
+	if (p==NULL)
+	{
+		perror ("socket() or bind()");
+		exit(1);
+	}
+
+	freeaddrinfo(res);
+
+	// listen for incoming connections
+	if ( listen (listenfd, 1000000) != 0 )
+	{
+		perror("listen() error");
+		exit(1);
+	}
+}
+
+//client connection
+void respond(int n)
+{
+	char mesg[99999], *reqline[3], data_to_send[BYTES], path[99999];
+	int rcvd, fd, bytes_read;
+
+	memset( (void*)mesg, (int)'\0', 99999 );
+
+	rcvd=recv(clients[n], mesg, 99999, 0);
+
+	if (rcvd<0)    // receive error
+		fprintf(stderr,("recv() error\n"));
+	else if (rcvd==0)    // receive socket closed
+		fprintf(stderr,"Client disconnected upexpectedly.\n");
+	else    // message received
+	{
+		printf("%s", mesg);
+		reqline[0] = strtok (mesg, " \t\n");
+		if ( strncmp(reqline[0], "GET\0", 4)==0 )
+		{
+			reqline[1] = strtok (NULL, " \t");
+			reqline[2] = strtok (NULL, " \t\n");
+			if ( strncmp( reqline[2], "HTTP/1.0", 8)!=0 && strncmp( reqline[2], "HTTP/1.1", 8)!=0 )
+			{
+				write(clients[n], "HTTP/1.0 400 Bad Request\n", 25);
+			}
+			else
+			{
+				if ( strncmp(reqline[1], "/\0", 2)==0 )
+					reqline[1] = "/reproductor.html";        //Because if no file is specified, index.html will be opened by default (like it happens in APACHE...
+
+				strcpy(path, ROOT);
+				strcpy(&path[strlen(ROOT)], reqline[1]);
+				printf("file: %s\n", path);
+
+				if ( (fd=open(path, O_RDONLY))!=-1 )    //FILE FOUND
+				{
+					send(clients[n], "HTTP/1.0 200 OK\n\n", 17, 0);
+					while ( (bytes_read=read(fd, data_to_send, BYTES))>0 )
+						write (clients[n], data_to_send, bytes_read);
+				}
+				else    write(clients[n], "HTTP/1.0 404 Not Found\n", 23); //FILE NOT FOUND
+			}
+		}
+	}
+
+	//Closing SOCKET
+	shutdown (clients[n], SHUT_RDWR);         //All further send and recieve operations are DISABLED...
+	close(clients[n]);
+	clients[n]=-1;
+}
+
