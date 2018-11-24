@@ -1,13 +1,52 @@
-<!DOCTYPE html>
-<html>
-
+<!doctype html>
+<html lang="es">
 <head>
-    <title>It works!</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="index.css">
+	<script src="index.js"></script>
+	<title>OStube</title>
 </head>
-
 <body>
-    <h1>Home page!</h1>
-    <p>Esta es una prueba</p>
-</body>
+	<div id="reproductor">
+		<video id="medio" width="720" hight="500">
+			<source id="mp4_src" src="Pokemon.mp4" type="video/mp4">
+		</video>
+		<nav>
+			<div id="botones">
+				<button type="button" id="reproducir">Reproducir</button>
+			</div>
+			<div id="barra">
+				<div id="progreso"></div>
+			</div>
+			<div style="clear: both"></div>
+		</nav>
+	</div>
 
+	<div  style="overflow-y:scroll; height:600px; width:400px">
+		<h1>Lista de reproducción</h1>
+		<ul id="galeria">
+			<li><img src="Pokemon.jpg"/></li>
+	        	<li><img src="Ralph.jpg"/></li>
+	        	<li><img src="Lego.jpg"/></li>
+			<li><img src="Electronica.jpg"/></li>
+	    	</ul>
+	</div>
+
+	<script>
+		var items = document.querySelectorAll("#galeria  li"),
+			tab = [], index;
+
+		for (var i = 0; i < items.length; i++) {
+			tab.push(items[i].innerHTML);
+		}
+
+		for (var i = 0; i < items.length; i++){
+			items[i].onclick = function(){
+				index = tab.indexOf(this.innerHTML);
+				document.getElementById("mp4_src").src = this.innerHTML.slice(10, -6) + ".mp4";
+				document.getElementById("medio").load();
+				reproducir.innerHTML="Reproducir";
+			};
+		}
+	</script>
 </html>

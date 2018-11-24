@@ -9,8 +9,10 @@
 #include<netdb.h>
 #include<signal.h>
 #include<fcntl.h>
+#include <semaphore.h>
+#include <pthread.h>
 
-#define CONNMAX 1000
+#define CONNMAX 100
 #define BYTES 1024
 
 char *ROOT;
@@ -18,6 +20,14 @@ int listenfd, clients[CONNMAX];
 void error(char *);
 void startServer(char *);
 void respond(int);
+time_t t;
+struct tm *tm;
+char fechayhora[100];
+
+void *p(void *arg){
+	int *slot2 = (int *) arg;
+	respond(*slot2);
+}
 
 int main(int argc, char* argv[]){
 	struct sockaddr_in clientaddr;
@@ -65,12 +75,20 @@ int main(int argc, char* argv[]){
 		if (clients[slot]<0)
 			error ("accept() error");
 		else
-		{
-			if ( fork()==0 )
-			{
-				respond(slot);
-				exit(0);
-			}
+		{	
+			struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&clientaddr;
+			struct in_addr ipAddr = pV4Addr->sin_addr;
+			char str[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
+			printf("cliente: %s\n", str);
+			pthread_t hilo;
+			int m = slot * 1;
+			pthread_create(&hilo, NULL, (void*)p, &m);
+			//if ( fork()==0 )
+			//{
+			//	respond(slot);
+			//	exit(0);
+			//}
 		}
 
 		while (clients[slot]!=-1) slot = (slot+1)%CONNMAX;
@@ -103,6 +121,7 @@ void startServer(char *port)
 	}
 	if (p==NULL)
 	{
+		close(listenfd);
 		perror ("socket() or bind()");
 		exit(1);
 	}
@@ -146,12 +165,27 @@ void respond(int n)
 			else
 			{
 				if ( strncmp(reqline[1], "/\0", 2)==0 )
-					reqline[1] = "/reproductor.html";        //Because if no file is specified, index.html will be opened by default (like it happens in APACHE...
+					reqline[1] = "/index.html";        //Because if no file is specified, index.html will be opened by default (like it happens in APACHE...
 
 				strcpy(path, ROOT);
 				strcpy(&path[strlen(ROOT)], reqline[1]);
 				printf("file: %s\n", path);
-
+				if(strcmp(reqline[1], "/index.html") == 0){
+					printf ("Usuario entrando al sistema\n");
+					t=time(NULL);
+					tm=localtime(&t);
+					strftime(fechayhora, 100, "%d/%m/%Y %H:%M:%S", tm);
+					printf ("Fecha y Hora de entrada: %s\n\n", fechayhora);
+					//printf(ip)
+				}
+				else{
+					printf("Solicitud del navegador\n");
+					t=time(NULL);
+					tm=localtime(&t);
+					strftime(fechayhora, 100, "%d/%m/%Y %H:%M:%S", tm);
+					printf ("Fecha y Hora de entrada: %s\n\n", fechayhora);
+					//printf(ip)
+				}
 				if ( (fd=open(path, O_RDONLY))!=-1 )    //FILE FOUND
 				{
 					send(clients[n], "HTTP/1.0 200 OK\n\n", 17, 0);
