@@ -12,27 +12,27 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define CONNMAX 100
+#define CONNMAX 1000
 #define BYTES 1024
 
 char *ROOT;
-int listenfd, clients[CONNMAX];
+int listenfd;
+int static clients[CONNMAX];
 void error(char *);
 void startServer(char *);
-void respond(int);
+void  respond(int);
 time_t t;
 struct tm *tm;
 char fechayhora[100];
+int contador;
+static sem_t semaforo;
 
-void *p(void *arg){
-	int *slot2 = (int *) arg;
-	respond(*slot2);
-}
-
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
 	struct sockaddr_in clientaddr;
 	socklen_t addrlen;
-	char c;    
+	char c;
+	sem_init(&semaforo, 0, 1);    
 	
 	//Default Values PATH = ~/ and PORT=10000
 	char PORT[6];
@@ -71,24 +71,23 @@ int main(int argc, char* argv[]){
 	{
 		addrlen = sizeof(clientaddr);
 		clients[slot] = accept (listenfd, (struct sockaddr *) &clientaddr, &addrlen);
-
 		if (clients[slot]<0)
 			error ("accept() error");
 		else
-		{	
+		{
 			struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&clientaddr;
 			struct in_addr ipAddr = pV4Addr->sin_addr;
 			char str[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
 			printf("cliente: %s\n", str);
-			pthread_t hilo;
-			int m = slot * 1;
-			pthread_create(&hilo, NULL, (void*)p, &m);
-			//if ( fork()==0 )
-			//{
-			//	respond(slot);
-			//	exit(0);
-			//}
+			//contador = slot * 1;
+			//pthread_t hilo;
+			//pthread_create(&hilo, NULL, respond, NULL);
+			if ( fork()==0 )
+			{
+				respond(slot);
+				exit(0);
+			}
 		}
 
 		while (clients[slot]!=-1) slot = (slot+1)%CONNMAX;
@@ -121,7 +120,6 @@ void startServer(char *port)
 	}
 	if (p==NULL)
 	{
-		close(listenfd);
 		perror ("socket() or bind()");
 		exit(1);
 	}
@@ -137,11 +135,10 @@ void startServer(char *port)
 }
 
 //client connection
-void respond(int n)
+void  respond(int n)
 {
 	char mesg[99999], *reqline[3], data_to_send[BYTES], path[99999];
 	int rcvd, fd, bytes_read;
-
 	memset( (void*)mesg, (int)'\0', 99999 );
 
 	rcvd=recv(clients[n], mesg, 99999, 0);
@@ -183,7 +180,7 @@ void respond(int n)
 					t=time(NULL);
 					tm=localtime(&t);
 					strftime(fechayhora, 100, "%d/%m/%Y %H:%M:%S", tm);
-					printf ("Fecha y Hora de entrada: %s\n\n", fechayhora);
+					printf ("Fecha y Hora de solicitud: %s\n\n", fechayhora);
 					//printf(ip)
 				}
 				if ( (fd=open(path, O_RDONLY))!=-1 )    //FILE FOUND
@@ -192,7 +189,7 @@ void respond(int n)
 					while ( (bytes_read=read(fd, data_to_send, BYTES))>0 )
 						write (clients[n], data_to_send, bytes_read);
 				}
-				else    write(clients[n], "HTTP/1.0 404 Not Found\n", 23); //FILE NOT FOUND
+				else    write(clients[n], "HTTP/1.0 404 Not Found\n", 23); //FILE NOT F
 			}
 		}
 	}
@@ -201,5 +198,7 @@ void respond(int n)
 	shutdown (clients[n], SHUT_RDWR);         //All further send and recieve operations are DISABLED...
 	close(clients[n]);
 	clients[n]=-1;
+	pthread_exit(NULL);
 }
+
 

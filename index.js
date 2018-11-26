@@ -7,6 +7,7 @@ function iniciar(){
 
 	reproducir.addEventListener('click', presionar, false);
 	barra.addEventListener('click', mover, false);
+	bucle=setInterval(estado, 1000);
 }
 
 function presionar(){
