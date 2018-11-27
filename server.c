@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 #define CONNMAX 1000
-#define BYTES 1024
+#define BYTES 7340032
 
 char *ROOT;
 int listenfd;
@@ -24,7 +24,6 @@ void  respond(int);
 time_t t;
 struct tm *tm;
 char fechayhora[100];
-int contador;
 static sem_t semaforo;
 
 int main(int argc, char* argv[])
@@ -127,7 +126,7 @@ void startServer(char *port)
 	freeaddrinfo(res);
 
 	// listen for incoming connections
-	if ( listen (listenfd, 1000000) != 0 )
+	if ( listen (listenfd, 10000) != 0 )
 	{
 		perror("listen() error");
 		exit(1);
