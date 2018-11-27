@@ -96,6 +96,104 @@ int main(int argc, char* argv[])
 	//Default Values PATH = ~/ and PORT=10000
 	char PORT[6];
 	ROOT = getenv("PWD");
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netdb.h>
+#include<signal.h>
+#include<fcntl.h>
+#include <semaphore.h>
+#include <pthread.h>
+#include <sys/mman.h>
+
+#define CONNMAX 1000
+#define BYTES 7340032
+
+char *ROOT;
+int listenfd;
+int static clients[CONNMAX];
+void error(char *);
+void startServer(char *);
+void  respond(int);
+time_t t;
+struct tm *tm;
+char fechayhora[100];
+static sem_t semaforo;
+
+char hora_de_inicio[100];
+static int * cantidad_de_bytes_transferidos; 
+static int * cantidad_de_clientes_diferentes;
+static int * cantidad_de_solicitudes_atendidas;
+static int * cantidad_de_threads_creados;
+
+void mostrardatos(){
+	printf("Hora de Inicio del program: %s\n",hora_de_inicio);
+	printf("Cantidad de bytes transferidos: %d\n",*cantidad_de_bytes_transferidos);
+	printf("Cantidad de clientes atendidos: %d\n",*cantidad_de_clientes_diferentes);
+	printf("Cantidad de solicitudes atendidas: %d\n",*cantidad_de_solicitudes_atendidas);
+	printf("Cantidad de hilos creados: %d\n",*cantidad_de_threads_creados);
+}
+
+void agregarvideo(){
+
+}
+
+void editarinformacion(){
+
+}
+
+void eliminarvideo(){
+
+}
+void menu(){
+	int numero;
+	while(1){
+		printf("Manejo de datos\n 1 Mostrar datos\n 2 Agregar video\n 3 Editar informacion de video\n 4 Eliminar video\n Digite un número: ");
+		scanf("%d", &numero);
+		switch (numero)
+		{
+			case 1:
+				mostrardatos();
+				break;
+
+		    	case 2:
+				agregarvideo();
+				break;
+			
+			case 3:
+				editarinformacion();
+				break;
+			
+			case 4:
+				eliminarvideo();
+				break;
+		    	
+			default:
+				printf("Ingrese un número correcto\n");
+		}
+
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	t=time(NULL);
+	tm=localtime(&t);
+	strftime(hora_de_inicio, 100, "%d/%m/%Y %H:%M:%S", tm);
+
+	struct sockaddr_in clientaddr;
+	socklen_t addrlen;
+	char c;
+	sem_init(&semaforo, 0, 1);    
+	
+	//Default Values PATH = ~/ and PORT=10000
+	char PORT[6];
+	ROOT = getenv("PWD");
 	strcpy(PORT,"10000");
 
 	int slot=0;
@@ -279,4 +377,6 @@ void  respond(int n)
 	clients[n]=-1;
 	pthread_exit(NULL);
 }
+
+
 
