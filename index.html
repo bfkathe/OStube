@@ -1,48 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+
 <head>
-	<meta charset="utf-8">
-	<link rel="stylesheet" href="index.css">
-	<script src="index.js"></script>
-	<title>OStube</title>
+  <meta charset="utf-8">
+  <title>OSTube</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <script src="js/bootstrap.js"></script>
+  <link rel="stylesheet" href="index.css">
+  <script src="index.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
+    crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+    crossorigin="anonymous"></script>
 </head>
+
 <body>
-	<div id="reproductor">
-		<video id="medio" width="720" hight="500" autoplay>
-	<source id="mp4_src" src="Pokemon.mp4" type="video/mp4">
-		</video>
-		<nav>
-			<div id="botones">
-<button type="button" id="reproducir">Pausa</button>
-			</div>
-			<div id="barra">
-				<div id="progreso"></div>
-			</div>
-			<div style="clear: both"></div>
-		</nav>
-	</div>
 
-	<div style="overflow-y:scroll; height:600px; width:400px">
-		<h1>Lista de reproducción</h1>
-		<ul id="galeria">
-			<li><img src="Pokemon.jpg"/></li>
-	        	<li><img src="Ralph.jpg"/></li>
-	        	<li><img src="Lego.jpg"/></li>
-			<li><img src="Electronica.jpg"/></li>
-	    	</ul>
-	</div>
+  <div class="bg">
 
-	<script>
-		var items = document.querySelectorAll("#galeria  li"),
-			tab = [], index;
-		for (var i = 0; i < items.length; i++) {
-			tab.push(items[i].innerHTML);
-		}
-		for (var i = 0; i < items.length; i++){
-			items[i].onclick = function(){
-				index = tab.indexOf(this.innerHTML);
-				document.getElementById("mp4_src").src = this.innerHTML.slice(10, -6) + ".mp4";
-				document.getElementById("medio").load();
-				reproducir.innerHTML="Pausa";
-			};
-		}
-	</script>
+    <header>
+      <div class="barraInicio">
+        <div id="texto" class="text-center">
+          <h1>OSTube Bienvenido</h1>
+        </div>
+      </div>
+    </header>
+
+    <div class="row">
+
+      <div class="col-md-8">
+        <div id="medio" class="embed-responsive embed-responsive-16by9">
+          <iframe id="video" class="embed-responsive-item" src="Pokemon.mp4"></iframe>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+
+        <div style="overflow-y:scroll; height:600px; width:400px">
+          <h1>Lista de reproducción</h1>
+          <ul id="galeria">
+            <li><img src="Pokemon.jpg" /></li>
+            <li><img src="Ralph.jpg" /></li>
+            <li><img src="Lego.jpg" /></li>
+            <li><img src="Electronica.jpg" /></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      var items = document.querySelectorAll("#galeria  li"),
+        tab = [], index;
+
+      for (var i = 0; i < items.length; i++) {
+        tab.push(items[i].innerHTML);
+      }
+
+      for (var i = 0; i < items.length; i++) {
+        items[i].onclick = function () {
+          index = tab.indexOf(this.innerHTML);
+          document.getElementById("video").src = this.innerHTML.slice(10, -6) + ".mp4";
+          document.getElementById("medio").load();
+
+          reproducir.innerHTML = "Reproducir";
+        };
+      }
+    </script>
+
+</body>
+
 </html>
