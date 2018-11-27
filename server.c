@@ -179,7 +179,7 @@ void startServer(char *port)
 	hints.ai_flags = AI_PASSIVE;
 	if (getaddrinfo( NULL, port, &hints, &res) != 0)
 	{
-		perror ("getaddrinfo() error");
+		//perror ("getaddrinfo() error");
 		exit(1);
 	}
 	// socket and bind
@@ -191,7 +191,7 @@ void startServer(char *port)
 	}
 	if (p==NULL)
 	{
-		perror ("socket() or bind()");
+		//perror ("socket() or bind()");
 		exit(1);
 	}
 
@@ -200,7 +200,7 @@ void startServer(char *port)
 	// listen for incoming connections
 	if ( listen (listenfd, 10000) != 0 )
 	{
-		perror("listen() error");
+		//perror("listen() error");
 		exit(1);
 	}
 }
@@ -215,9 +215,9 @@ void  respond(int n)
 	rcvd=recv(clients[n], mesg, 99999, 0);
 
 	if (rcvd<0)    // receive error
-		fprintf(stderr,("recv() error\n"));
+		printf(" ");//;fprintf(stderr,("recv() error\n"));
 	else if (rcvd==0)    // receive socket closed
-		fprintf(stderr,"Client disconnected upexpectedly.\n");
+		printf(" ");//fprintf(stderr,"Client disconnected upexpectedly.\n");
 	else    // message received
 	{
 		////printf("%s", mesg);
