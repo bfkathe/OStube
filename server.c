@@ -11,6 +11,7 @@
 #include<fcntl.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <sys/mman.h>
 
 #define CONNMAX 1000
 #define BYTES 7340032
@@ -26,8 +27,67 @@ struct tm *tm;
 char fechayhora[100];
 static sem_t semaforo;
 
+char hora_de_inicio[100];
+static int * cantidad_de_bytes_transferidos; 
+static int * cantidad_de_clientes_diferentes;
+static int * cantidad_de_solicitudes_atendidas;
+static int * cantidad_de_threads_creados;
+
+void mostrardatos(){
+	printf("Hora de Inicio del program: %s\n",hora_de_inicio);
+	printf("Cantidad de bytes transferidos: %d\n",*cantidad_de_bytes_transferidos);
+	printf("Cantidad de clientes atendidos: %d\n",*cantidad_de_clientes_diferentes);
+	printf("Cantidad de solicitudes atendidas: %d\n",*cantidad_de_solicitudes_atendidas);
+	printf("Cantidad de hilos creados: %d\n",*cantidad_de_threads_creados);
+}
+
+void agregarvideo(){
+
+}
+
+void editarinformacion(){
+
+}
+
+void eliminarvideo(){
+
+}
+void menu(){
+	int numero;
+	while(1){
+		printf("Manejo de datos\n 1 Mostrar datos\n 2 Agregar video\n 3 Editar informacion de video\n 4 Eliminar video\n Digite un número: ");
+		scanf("%d", &numero);
+		switch (numero)
+		{
+			case 1:
+				mostrardatos();
+				break;
+
+		    	case 2:
+				agregarvideo();
+				break;
+			
+			case 3:
+				editarinformacion();
+				break;
+			
+			case 4:
+				eliminarvideo();
+				break;
+		    	
+			default:
+				printf("Ingrese un número correcto\n");
+		}
+
+	}
+}
+
 int main(int argc, char* argv[])
 {
+	t=time(NULL);
+	tm=localtime(&t);
+	strftime(hora_de_inicio, 100, "%d/%m/%Y %H:%M:%S", tm);
+
 	struct sockaddr_in clientaddr;
 	socklen_t addrlen;
 	char c;
@@ -39,6 +99,15 @@ int main(int argc, char* argv[])
 	strcpy(PORT,"10000");
 
 	int slot=0;
+
+	cantidad_de_bytes_transferidos = mmap(NULL, sizeof *cantidad_de_bytes_transferidos, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	*cantidad_de_bytes_transferidos = 0;
+	cantidad_de_clientes_diferentes = mmap(NULL, sizeof *cantidad_de_clientes_diferentes, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	*cantidad_de_clientes_diferentes = 0;
+	cantidad_de_solicitudes_atendidas = mmap(NULL, sizeof *cantidad_de_solicitudes_atendidas, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	*cantidad_de_solicitudes_atendidas = 0;
+	cantidad_de_threads_creados = mmap(NULL, sizeof *cantidad_de_threads_creados, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	*cantidad_de_threads_creados = 0;
 
 	//Parsing the command line arguments
 	while ((c = getopt (argc, argv, "p:r:")) != -1)
@@ -64,7 +133,10 @@ int main(int argc, char* argv[])
 	for (i=0; i<CONNMAX; i++)
 		clients[i]=-1;
 	startServer(PORT);
-
+	if ( fork()==0 )
+	{
+		menu();
+	}
 	// ACCEPT connections
 	while (1)
 	{
@@ -78,7 +150,7 @@ int main(int argc, char* argv[])
 			struct in_addr ipAddr = pV4Addr->sin_addr;
 			char str[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
-			printf("cliente: %s\n", str);
+			////printf("cliente: %s\n", str);
 			//contador = slot * 1;
 			//pthread_t hilo;
 			//pthread_create(&hilo, NULL, respond, NULL);
@@ -148,7 +220,7 @@ void  respond(int n)
 		fprintf(stderr,"Client disconnected upexpectedly.\n");
 	else    // message received
 	{
-		printf("%s", mesg);
+		////printf("%s", mesg);
 		reqline[0] = strtok (mesg, " \t\n");
 		if ( strncmp(reqline[0], "GET\0", 4)==0 )
 		{
@@ -165,25 +237,33 @@ void  respond(int n)
 
 				strcpy(path, ROOT);
 				strcpy(&path[strlen(ROOT)], reqline[1]);
-				printf("file: %s\n", path);
+				////printf("file: %s\n", path);
 				if(strcmp(reqline[1], "/index.html") == 0){
-					printf ("Usuario entrando al sistema\n");
+					////printf ("Usuario entrando al sistema\n");
 					t=time(NULL);
 					tm=localtime(&t);
 					strftime(fechayhora, 100, "%d/%m/%Y %H:%M:%S", tm);
-					printf ("Fecha y Hora de entrada: %s\n\n", fechayhora);
-					//printf(ip)
+					////printf ("Fecha y Hora de entrada: %s\n\n", fechayhora);
+					*cantidad_de_clientes_diferentes = *cantidad_de_clientes_diferentes+1;
 				}
 				else{
-					printf("Solicitud del navegador\n");
+					////printf("Solicitud del navegador\n");
 					t=time(NULL);
 					tm=localtime(&t);
 					strftime(fechayhora, 100, "%d/%m/%Y %H:%M:%S", tm);
-					printf ("Fecha y Hora de solicitud: %s\n\n", fechayhora);
-					//printf(ip)
+					////printf ("Fecha y Hora de solicitud: %s\n\n", fechayhora);
 				}
+				*cantidad_de_solicitudes_atendidas = *cantidad_de_solicitudes_atendidas+1;
+				*cantidad_de_threads_creados = *cantidad_de_threads_creados+1;
 				if ( (fd=open(path, O_RDONLY))!=-1 )    //FILE FOUND
 				{
+					FILE *fich;
+
+					fich=fopen(path,"r");
+
+					fseek(fich, 0L, SEEK_END);
+					*cantidad_de_bytes_transferidos = *cantidad_de_bytes_transferidos+ftell(fich);
+					fclose(fich);
 					send(clients[n], "HTTP/1.0 200 OK\n\n", 17, 0);
 					while ( (bytes_read=read(fd, data_to_send, BYTES))>0 )
 						write (clients[n], data_to_send, bytes_read);
