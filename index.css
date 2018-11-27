@@ -67,3 +67,25 @@ body{
 #galeria li:hover img {
     width:400px;
 }
+
+.barraInicio {
+    background-color: black;
+    border-top: 15px solid rgb(148, 13, 20);
+    border-bottom: 15px solid rgb(148, 13, 20);
+}
+
+body, html {
+	height: 100%;
+  }
+  .bg {
+	/* The image used */
+	background-image: url("blackWood.jpg");
+  
+	/* Full height */
+	height: 100%;
+  
+	/* Center and scale the image nicely */
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+  }
